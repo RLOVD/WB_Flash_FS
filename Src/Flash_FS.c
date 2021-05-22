@@ -89,7 +89,7 @@ return clr_page_adr;
 }
 
 
-/* Фунция поиска файла, если он присутствует возвращает адрес страницы и модифицирует значение версии */
+/* Фунция поиска файла, если он присутствует возвращает адрес страницы и модифицирует передаваемую переменную версии */
 uint32_t Find_File(uint16_t id_file, uint16_t *ver_file)
 {
 
@@ -137,7 +137,8 @@ void Clear_file_process(Servise_info_Tpf *clr_file)
 
 void Erase_Page(unsigned int pageAddress) 
 	{
-		/*
+		/*на данный момент не реализовано , реализация в зависимости от МК
+		ниже потенциально возможный код
 	while (FLASH->SR & FLASH_SR_BSY);
 	if (FLASH->SR & FLASH_SR_EOP) {
 		FLASH->SR = FLASH_SR_EOP;
@@ -159,7 +160,8 @@ void Erase_Page(unsigned int pageAddress)
 
 void Flash_Write(uint32_t *data, uint32_t address, uint16_t count) 
 	{
-		/*
+		/*на данный момент не реализовано , реализация в зависимости от МК
+		ниже потенциально возможный код
 	unsigned int i;
 
 	while (FLASH->SR & FLASH_SR_BSY);
