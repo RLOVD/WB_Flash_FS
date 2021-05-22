@@ -26,7 +26,13 @@ uint8_t File_Write(uint16_t id_file, uint32_t *w_file, uint16_t size) //size 102
 	
 	/*¬ыполн€ем поиск наличи€ файла*/
 	uint16_t ver_f=0;
-	Find_File(id_file,&ver_f); 
+	Find_File(id_file,&ver_f);
+	/*≈сли файл присутствует, ставим в его в очередь на удаление*/
+	if (ver_f)
+	{
+	clr_file.id=id_file;
+	clr_file.ver_file=ver_f;	
+	}	
 	/*”величиваем значение версии*/
 	ver_f++;
 	
@@ -46,10 +52,25 @@ uint8_t File_Write(uint16_t id_file, uint32_t *w_file, uint16_t size) //size 102
 	return 1;
 }
 
-void File_Read(uint16_t id_file, uint32_t *r_file, uint16_t size)
+uint8_t File_Read(uint16_t id_file, uint32_t *r_file, uint16_t size)
 {
- 
-
+ /**/
+	/*¬ыполн€ем поиск наличи€ файла*/
+	uint16_t ver_f;
+	uint32_t page_adr=0;
+	page_adr = Find_File(id_file,&ver_f);
+	/*≈сли файл присутствует, чтение*/
+	if (page_adr)
+	{
+    for (uint32_t adr=page_adr;adr<size; adr+=4)
+		{
+		*r_file=*(uint32_t*)(adr);
+		r_file+=4;	
+		}
+		
+	}	
+  else 	return 0;
+return 1;
 }
 
 void File_Delete(uint16_t id_file)
@@ -73,15 +94,20 @@ uint32_t Find_Clear_Page()
 	if (head_adr>=END_PAGE_FLASH_ADR) head_adr=START_PAGE_FLASH_ADR;
 
 	uint32_t read_word=0;
-		/*ѕровер€ем последние 4 байта на каждой странице последовательно */
+		/*ѕроверка последние 4 байта и первые 4  на каждой странице последовательно */
   for (uint32_t adr=head_adr;adr<END_PAGE_FLASH_ADR; adr+= SIZE_PAGE)
 	{ 
 		read_word=*(uint32_t*)(adr+SIZE_PAGE-4);
-		
 		if (read_word==0xFFFFFFFF)
 		{
+				read_word=*(uint32_t*)(adr);
+		    if (read_word==0xFFFFFFFF)
+				{
 				 return adr; //возвращаем значение свободного адреса
+				}
+	
 		}
+		
 	}
 
 return 0;
@@ -95,17 +121,17 @@ uint32_t Find_File(uint16_t id_file, uint16_t *ver_file)
 	uint16_t read_id=0;
 	uint32_t read_word=0;
 	
- /*считываем последние 4 байта на каждой странице и ищем id */
+ /*считываем  последние 4 байта на каждой странице и ищем id */
   for (uint32_t adr=START_PAGE_FLASH_ADR;adr<END_PAGE_FLASH_ADR; adr+= SIZE_PAGE)
 	{ 
 		read_word=*(uint32_t*)(adr+SIZE_PAGE-4);
 		
-		if (read_word!=0xFF)
+		if (read_word!=0xFFFFFFFF)
 		{
 		  read_id	= (uint16_t)read_word;	
 		  if (read_id==id_file)
 	    	{
-			   *ver_file=(uint16_t)((read_word>16)&0xFF);
+			   *ver_file=(uint16_t)((read_word>>16)&0xFF);
 				 return adr; //возвращаем значение адреса
 		    }
 		}
@@ -124,10 +150,12 @@ void Clear_file_process(Servise_info_Tpf *clr_file)
 	else
 	{
 		uint32_t page_adr;
+		uint16_t v_file;
 		
-    page_adr=Find_File(clr_file->id,0);
-		/*—тирание страницы с файлом в случае если он найден  */
-		if (page_adr!=0)
+    page_adr=Find_File(clr_file->id,&v_file);
+		
+		/*—тирание страницы с файлом в случае если он найден и совпадает верси€ */
+		if (page_adr!=0 && clr_file->ver_file==v_file)
 		{
 	  	Erase_Page(page_adr);
 		}
