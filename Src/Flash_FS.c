@@ -1,6 +1,7 @@
 #include "Flash_FS.h"
 
 Servise_info_Tpf clr_file; // структура для удаления файла
+static uint32_t head_adr=START_PAGE_FLASH_ADR;  // переменная адреса указывает на текущую страницу
 
 void Erase_Page(unsigned int pageAddress);
 void Flash_Write(uint32_t *data, uint32_t address, uint16_t count);
@@ -8,20 +9,20 @@ uint32_t Find_Clear_Page();
 
 void Flash_Init(void)
 {
-	/* */
-
+	/*Функция инициализации. Реализация зависит от используемого МК*/
 
 }
 
 
-void File_Write(uint16_t id_file, uint32_t *w_file, uint16_t size) //size 1024-4
+uint8_t File_Write(uint16_t id_file, uint32_t *w_file, uint16_t size) //size 1024-4
 {
 	assert(size<SIZE_PAGE-4); //Проверка превышения размера файла
 	Servise_info_Tpf service_info;
 	
   uint32_t clr_page_adr;
-	/*Выполняем поиск чистой страницы */
+	/*Выполняем поиск чистой страницы в случае ее отсутвия возвращаем 0*/
   clr_page_adr=Find_Clear_Page();
+	if (clr_page_adr==0) return 0;
 	
 	/*Выполняем поиск наличия файла*/
 	uint16_t ver_f=0;
@@ -40,7 +41,9 @@ void File_Write(uint16_t id_file, uint32_t *w_file, uint16_t size) //size 1024-4
 	uint32_t end_adr=clr_page_adr + SIZE_PAGE-4 ;
 	Flash_Write((uint32_t*)&service_info,end_adr, size);
 	
-
+	/*Увеличиваем значение текущей страницы для свободного места  */
+	if (head_adr<END_PAGE_FLASH_ADR) head_adr+=SIZE_PAGE;
+	return 1;
 }
 
 void File_Read(uint16_t id_file, uint32_t *r_file, uint16_t size)
@@ -63,36 +66,32 @@ void File_Delete(uint16_t id_file)
   
 }
 
-
+/*Функция поиска свободной для записи страницы , если таковая отсутствует возврат 0*/
 uint32_t Find_Clear_Page()
 {
-	/*Проверяем первые 10 и последние 4 байта на каждой странице последовательно */
-uint32_t clr_page_adr=0;
-	/*
-  for (uint32_t adr=START_PAGE_FLASH_ADR;adr<END_PAGE_FLASH_ADR; adr+= SIZE_PAGE)
+	/*Проверка не указывает ли текущий адрес на конец заданной области */
+	if (head_adr>=END_PAGE_FLASH_ADR) head_adr=START_PAGE_FLASH_ADR;
+
+	uint32_t read_word=0;
+		/*Проверяем последние 4 байта на каждой странице последовательно */
+  for (uint32_t adr=head_adr;adr<END_PAGE_FLASH_ADR; adr+= SIZE_PAGE)
 	{ 
 		read_word=*(uint32_t*)(adr+SIZE_PAGE-4);
 		
-		if (read_word!=0xFF)
+		if (read_word==0xFFFFFFFF)
 		{
-		  read_id	= (uint16_t)read_word;	
-		  if (read_id==id_file)
-	    	{
-			   *ver_file=(uint16_t)((read_word>16)&0xFF);
-				 return adr; //возвращаем значение адреса
-		    }
+				 return adr; //возвращаем значение свободного адреса
 		}
+	}
 
-	}	
-*/
-return clr_page_adr;
+return 0;
 }
 
 
 /* Фунция поиска файла, если он присутствует возвращает адрес страницы и модифицирует передаваемую переменную версии */
 uint32_t Find_File(uint16_t id_file, uint16_t *ver_file)
 {
-
+  uint16_t read_ver=0;
 	uint16_t read_id=0;
 	uint32_t read_word=0;
 	
@@ -135,6 +134,7 @@ void Clear_file_process(Servise_info_Tpf *clr_file)
 	}
 }
 
+/*Функция стирания страницы flash*/
 void Erase_Page(unsigned int pageAddress) 
 	{
 		/*на данный момент не реализовано , реализация в зависимости от МК
@@ -153,6 +153,8 @@ void Erase_Page(unsigned int pageAddress)
 }
 	
 
+
+/*Функция записи  flash*/
 
 //data - указатель на записываемые данные
 //address - адрес во flash

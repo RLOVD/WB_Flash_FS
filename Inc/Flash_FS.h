@@ -5,30 +5,28 @@
 #include "assert.h"
 
 
-/*Размер страницы в б*/
+/*Адреса начала и окончания области для записи файлов*/
+
 #define START_PAGE_FLASH_ADR   0x08000000
 #define END_PAGE_FLASH_ADR     0x08007000
 
-
+/*Размер страницы в зависимости от используемого МК*/
 #define SIZE_PAGE  1024
 
-#define NUM_PAGE    64
 
 
 
-
-
+/*Структура дополнительной информации файла*/
 typedef struct 
 	{
- 	 uint16_t ver_file;
-	 uint16_t id;
+ 	 uint16_t ver_file; //номер версии
+	 uint16_t id;       // идентификатор
   }Servise_info_Tpf;
 	
 
 
 void Flash_Init(void);
 uint32_t Find_File(uint16_t id_file, uint16_t *ver_file);
-	
-void File_Write(uint16_t id_file, uint32_t *w_file, uint16_t size); 
+uint8_t File_Write(uint16_t id_file, uint32_t *w_file, uint16_t size);
 void File_Read(uint16_t id_file, uint32_t *r_file, uint16_t size);
 #endif // FLASH_FS_H
