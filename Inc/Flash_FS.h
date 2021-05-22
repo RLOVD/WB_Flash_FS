@@ -29,4 +29,5 @@ void Flash_Init(void);
 uint32_t Find_File(uint16_t id_file, uint16_t *ver_file);
 uint8_t File_Write(uint16_t id_file, uint32_t *w_file, uint16_t size);
 uint8_t File_Read(uint16_t id_file, uint32_t *r_file, uint16_t size);
+void File_Delete(uint16_t id_file);
 #endif // FLASH_FS_H
